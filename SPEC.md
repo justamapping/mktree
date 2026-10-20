@@ -127,7 +127,10 @@ mktree never deletes. It plans first and writes only if the plan has no conflict
 | file                 | dir                    | **conflict** (never forced)           |
 
 - If any conflicts exist, report them all and exit 1 without writing. `--force` resolves only the content conflict.
-- Symlinks on disk are not followed during apply. A symlink in the path is a conflict.
+- Symlinks on disk are not followed during apply. A symlink in the path is a conflict. Other non-regular files (fifos, sockets, devices) are conflicts too, and are never read.
+- Children of a conflicting directory are not planned.
+- The target directory must already exist. It can be a symlink, since the user named it.
+- New files are created exclusively, so a file that appears between planning and writing causes an error instead of being clobbered. An I/O error partway through leaves the steps completed so far in place, which is safe because nothing is deleted and rerunning picks up where it stopped.
 - New files get mode `0644` and new directories `0755`, both subject to umask.
 
 ## 4. Dump
