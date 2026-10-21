@@ -156,3 +156,34 @@ func TestDumpRoundTrip(t *testing.T) {
 		}
 	}
 }
+
+func TestUsageExample(t *testing.T) {
+	dir := t.TempDir()
+	if _, errOut, code := mktree(t, example, "-q", dir); code != 0 {
+		t.Fatalf("example in usage does not apply: %s", errOut)
+	}
+	b, _ := os.ReadFile(filepath.Join(dir, "project/src/main.go"))
+	expect(t, "main.go", string(b), "package main\n\nfunc main() {}\n")
+}
+
+// code blocks in the howto are valid input
+func TestHowto(t *testing.T) {
+	out, _, code := mktree(t, "", "--howto")
+	if code != 0 || out != howto {
+		t.Fatalf("--howto: exit %d", code)
+	}
+	blocks := 0
+	for _, part := range strings.Split(howto, "```")[1:] {
+		lang, body, _ := strings.Cut(part, "\n")
+		if lang != "tree" && lang != "json" {
+			continue
+		}
+		blocks++
+		if _, errOut, code := mktree(t, body, "--from", lang, "-q", t.TempDir()); code != 0 {
+			t.Errorf("%s block does not apply: %s\n%s", lang, errOut, body)
+		}
+	}
+	if blocks == 0 {
+		t.Error("no tree or json blocks found")
+	}
+}

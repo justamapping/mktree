@@ -175,7 +175,7 @@ EOF
 | `-n, --dry-run`   | print the plan, write nothing                          |
 | `--force`         | overwrite files whose content differs                  |
 | `-q, -v`          | quiet / verbose                                        |
-| `--howto`         | human or agent context to understand the program better (do this at the very end, could literally cat readme or alike)
+| `--howto`         | print the full guide (`docs/howto.md`, embedded in the binary) for humans and agents |
 
 Flags go before `TARGET`/`DIR` (standard Go flag parsing). A target directory literally named `dump` or `convert` is written `./dump`.
 

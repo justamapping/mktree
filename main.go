@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -18,13 +19,35 @@ import (
 	"mktree/internal/tree"
 )
 
-const usage = `usage:
+const example = `project/  # trailing / makes a directory
+  src/main.go  # a/b shorthand creates parents
+    package main
+
+    func main() {}
+  data/
+  .gitignore
+`
+
+//go:embed docs/howto.md
+var howto string
+
+var usage = `usage:
   mktree [flags] [TARGET]      apply a tree to TARGET (default .)
   mktree dump [flags] [DIR]    print DIR as a tree (default .)
   mktree convert [flags]       convert between tree, json and yaml
 
 Input is read from -f FILE, or from stdin when -f is omitted or -.
 Flags go before TARGET or DIR.
+Full guide to the format and behavior: mktree --howto
+
+example:
+  mktree <<'EOF'
+` + indent(example, "  ") + `  EOF
+
+Indent with spaces; the first indented line sets the unit. Lines one level
+under a file are its content, kept as-is including # and tabs. A file with
+no content is created empty, or left alone if it exists. Existing files are
+never changed without --force. To see how input parses: mktree convert.
 
 apply:
   -f FILE         input file
@@ -33,6 +56,7 @@ apply:
   --force         overwrite files whose content differs
   -q              print only conflicts
   -v              also print entries that already exist
+  --howto         print the full guide
 
 dump:
   --to FMT        tree, json or yaml (default tree)
@@ -48,6 +72,16 @@ convert:
 Plan: + create, = exists, ~ overwrite, ! conflict
 Exit: 0 success, 1 conflicts or I/O error, 2 parse or usage error
 `
+
+func indent(s, prefix string) string {
+	lines := strings.SplitAfter(s, "\n")
+	for i, l := range lines {
+		if strings.TrimSpace(l) != "" {
+			lines[i] = prefix + l
+		}
+	}
+	return strings.Join(lines, "")
+}
 
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
@@ -121,7 +155,12 @@ func (c *cli) apply(args []string) error {
 	fs.BoolVar(&force, "force", false, "")
 	fs.BoolVar(&quiet, "q", false, "")
 	fs.BoolVar(&verbose, "v", false, "")
+	showHowto := fs.Bool("howto", false, "")
 	if err := parse(fs, args, 1); err != nil {
+		return err
+	}
+	if *showHowto {
+		_, err := io.WriteString(c.stdout, howto)
 		return err
 	}
 	target := "."
