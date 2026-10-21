@@ -139,12 +139,13 @@ mktree never deletes. It plans first and writes only if the plan has no conflict
 
 - Default output is the `.tree` format with a 2-space unit and no contents.
 - `--contents`: include bodies for text files up to `--max-size` (default 64 KiB). Binary and oversized files are emitted with no body.
-- Skips `.git/` by default. `--hidden` includes dotfiles, which are excluded by default the same way `tree` does. `-I PATTERN` ignores matches (repeatable).
-- `--gitignore` respects `.gitignore` files.
+- `.git` is never included. `--hidden` includes dotfiles, which are excluded by default the same way `tree` does. `-I PATTERN` skips base names matching a shell glob (repeatable).
+- `--gitignore` skips what `git ls-files --others --ignored --exclude-standard` reports, so it needs git and a repository.
 - Entries are sorted by name, directories first.
-- Symlinks are emitted as files with no body and are not followed. (Open: see 6.)
+- Symlinks and other non-regular files are skipped, since symlinks are out of scope.
+- In tree output, a body the format would change is omitted with a warning on stderr. That covers a missing trailing newline, trailing blank lines, whitespace-only lines, CRLF, and a first line that starts with indentation. A dump never misstates a file. JSON and YAML keep exact bytes.
 
-Invariant: `mktree dump D --contents | mktree -n D` reports no changes for text files under the size limit.
+Invariant: `mktree dump D --contents --to F | mktree -n --from F D` reports no changes, for every format F.
 
 ## 5. CLI
 
@@ -176,7 +177,9 @@ EOF
 | `-q, -v`          | quiet / verbose                                        |
 | `--howto`         | human or agent context to understand the program better (do this at the very end, could literally cat readme or alike)
 
-Plan output (dry-run and `-v`), one line per node:
+Flags go before `TARGET`/`DIR` (standard Go flag parsing). A target directory literally named `dump` or `convert` is written `./dump`.
+
+Plan output, one line per node. Creates, overwrites and conflicts are printed by default. `-v` adds existing entries, and `-q` prints only conflicts. The plan is the same with and without `-n`:
 
 ```
 + project/backend/store/
@@ -187,7 +190,7 @@ Plan output (dry-run and `-v`), one line per node:
 
 `+` create, `=` exists, `~` overwrite (forced), `!` conflict.
 
-Exit codes: `0` success, `1` conflicts, `2` parse or usage error. Parse errors are reported as `file:line:col: message`.
+Exit codes: `0` success, `1` conflicts or I/O error, `2` parse or usage error. Parse errors are reported as `file:line:col: message`, with `<stdin>` as the file name for stdin. JSON and YAML input reject unknown fields and go through the same validation as tree input.
 
 The `-a` flag from the original idea is dropped because merging is the only mode. The inline-string form (`mktree "{tree}"`) is replaced by stdin/heredoc, which avoids shell-quoting problems with multi-line input.
 

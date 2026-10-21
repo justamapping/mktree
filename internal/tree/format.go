@@ -92,6 +92,16 @@ func (f *formatter) body(content, prefix, path string) error {
 	return nil
 }
 
+// Expressible reports whether content survives Format and Parse unchanged wherever its file appears.
+func Expressible(content string) bool {
+	out, err := Format([]*Node{{Name: "f", Type: File, Content: &content}})
+	if err != nil {
+		return false
+	}
+	back, err := Parse(out)
+	return err == nil && back[0].Content != nil && *back[0].Content == content
+}
+
 // needsQuote reports whether Parse would read name differently without quotes.
 func needsQuote(name string) bool {
 	first := []rune(name)[0]

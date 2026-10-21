@@ -169,3 +169,27 @@ func TestRoundTrip(t *testing.T) {
 		})
 	}
 }
+
+func TestExpressible(t *testing.T) {
+	tests := []struct {
+		content string
+		want    bool
+	}{
+		{"hello\n", true},
+		{"a\n\n\tb # c\n", true},
+		{"tree:\n├── x/\n", true},
+		{"├── x/\n", false},
+		{"", false},
+		{"no newline", false},
+		{"trailing blank\n\n", false},
+		{"a\n  \nb\n", false},
+		{"crlf\r\n", false},
+		{"  indented first\n", false},
+		{"\n\nleading blanks\n", true},
+	}
+	for _, tt := range tests {
+		if got := Expressible(tt.content); got != tt.want {
+			t.Errorf("Expressible(%q) = %v, want %v", tt.content, got, tt.want)
+		}
+	}
+}

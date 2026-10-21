@@ -13,13 +13,13 @@ const (
 )
 
 type Node struct {
-	Name     string  `json:"name"`
-	Type     Type    `json:"type"`
-	Comment  string  `json:"comment,omitempty"`
-	Children []*Node `json:"children,omitempty"`
+	Name     string  `json:"name" yaml:"name"`
+	Type     Type    `json:"type" yaml:"type"`
+	Comment  string  `json:"comment,omitempty" yaml:"comment,omitempty"`
+	Children []*Node `json:"children,omitempty" yaml:"children,omitempty"`
 	// nil means "ensure exists", "" means "ensure empty".
-	Content *string `json:"content,omitempty"`
-	Line    int     `json:"-"`
+	Content *string `json:"content,omitempty" yaml:"content,omitempty"`
+	Line    int     `json:"-" yaml:"-"`
 }
 
 // Validate checks that nodes form a tree that can be written to disk.
