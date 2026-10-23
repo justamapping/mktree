@@ -77,8 +77,19 @@ func TestApplyConflict(t *testing.T) {
 		t.Error("b.md written despite conflict")
 	}
 
+	out, errOut, code = mktree(t, src, "--no-clobber", dir)
+	expect(t, "no-clobber", out, "= a.md   content differs, kept\n+ b.md\n")
+	if code != 0 || errOut != "" {
+		t.Errorf("no-clobber exit %d: %s", code, errOut)
+	}
+	b, _ := os.ReadFile(filepath.Join(dir, "a.md"))
+	expect(t, "kept a.md", string(b), "old\n")
+	if _, errOut, code := mktree(t, src, "--force", "--no-clobber", dir); code != 2 {
+		t.Errorf("force with no-clobber: exit %d %s", code, errOut)
+	}
+
 	out, _, code = mktree(t, src, "--force", dir)
-	expect(t, "force", out, "~ a.md\n+ b.md\n")
+	expect(t, "force", out, "~ a.md\n")
 	if code != 0 {
 		t.Errorf("force exit %d", code)
 	}

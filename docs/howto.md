@@ -52,12 +52,14 @@ mktree plans first, then writes. It **never deletes** anything.
 | directory                 | directory                 | `=` kept, children checked          |
 | file without content      | file                      | `=` kept, contents untouched        |
 | file with content         | same content              | `=` kept                            |
-| file with content         | different content         | `!` conflict (`--force`: `~` overwritten) |
+| file with content         | different content         | `!` conflict (`--force`: `~` overwritten, `--no-clobber`: `=` kept) |
 | file or directory         | the other kind, a symlink | `!` conflict, even with `--force`   |
 
 If anything conflicts, mktree prints the conflicts, writes **nothing**, and exits 1. It's safe to re-run the same tree: anything already done shows as `=`. Files on disk that aren't in the tree are ignored, so you can add new files to an existing project by applying a tree that lists only them, or the whole layout.
 
-Output lists `+` and `~` and `!` lines. `-v` adds `=` lines, `-q` shows only conflicts.
+`--no-clobber` suits files that are meant to diverge, like a per-machine config with placeholder content: the placeholder is written once and your edits are never reported as conflicts.
+
+Output lists `+` and `~` and `!` lines, plus `=` lines that carry a note. `-v` adds `=` lines, `-q` shows only conflicts.
 
 Exit codes: `0` ok, `1` conflicts or an I/O error, `2` the input or flags are invalid. Parse errors read `file:line:col: message`, with `<stdin>` as the file for piped input.
 

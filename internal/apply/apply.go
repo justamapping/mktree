@@ -41,6 +41,8 @@ func (s Step) String() string {
 type Options struct {
 	// overwrite files whose content differs
 	Force bool
+	// keep files whose content differs
+	NoClobber bool
 }
 
 // Plan is the ordered list of steps that makes Root match a tree. Parents come before children.
@@ -53,6 +55,9 @@ var ErrConflicts = errors.New("plan has conflicts")
 
 // New compares nodes against the directory root without writing anything.
 func New(root string, nodes []*tree.Node, opts Options) (*Plan, error) {
+	if opts.Force && opts.NoClobber {
+		return nil, errors.New("force and no-clobber are mutually exclusive")
+	}
 	if err := tree.Validate(nodes); err != nil {
 		return nil, err
 	}
@@ -125,6 +130,8 @@ func compare(n *tree.Node, path string, info fs.FileInfo, opts Options) (Action,
 		return Exists, "", nil
 	case opts.Force:
 		return Overwrite, "", nil
+	case opts.NoClobber:
+		return Exists, "content differs, kept", nil
 	}
 	return Conflict, "content differs", nil
 }

@@ -123,10 +123,10 @@ mktree never deletes. It plans first and writes only if the plan has no conflict
 | file, no body        | file                   | no-op (contents untouched)            |
 | file, body           | nothing                | create with body                      |
 | file, body           | file, same bytes       | no-op                                 |
-| file, body           | file, different bytes  | **conflict** (`--force`: overwrite)   |
+| file, body           | file, different bytes  | **conflict** (`--force`: overwrite, `--no-clobber`: keep) |
 | file                 | dir                    | **conflict** (never forced)           |
 
-- If any conflicts exist, report them all and exit 1 without writing. `--force` resolves only the content conflict.
+- If any conflicts exist, report them all and exit 1 without writing. `--force` and `--no-clobber` (mutually exclusive) resolve only the content conflict, by overwriting or keeping the file on disk. `--no-clobber` is for files meant to diverge, such as per-machine config that a repo can't track.
 - Symlinks on disk are not followed during apply. A symlink in the path is a conflict. Other non-regular files (fifos, sockets, devices) are conflicts too, and are never read.
 - Children of a conflicting directory are not planned.
 - The target directory must already exist. It can be a symlink, since the user named it.
@@ -174,6 +174,7 @@ EOF
 | `--to FMT`        | output format for `dump` / `convert` (default `tree`)  |
 | `-n, --dry-run`   | print the plan, write nothing                          |
 | `--force`         | overwrite files whose content differs                  |
+| `--no-clobber`    | keep files whose content differs, reported as `=` with a note |
 | `-q, -v`          | quiet / verbose                                        |
 | `--howto`         | print the full guide (`docs/howto.md`, embedded in the binary) for humans and agents |
 

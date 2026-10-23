@@ -47,13 +47,14 @@ example:
 Indent with spaces; the first indented line sets the unit. Lines one level
 under a file are its content, kept as-is including # and tabs. A file with
 no content is created empty, or left alone if it exists. Existing files are
-never changed without --force. To see how input parses: mktree convert.
+never changed without --force (--no-clobber keeps them quietly). To see how input parses: mktree convert.
 
 apply:
   -f FILE         input file
   --from FMT      tree, json or yaml (default: by extension, else tree)
   -n, --dry-run   print the plan, write nothing
   --force         overwrite files whose content differs
+  --no-clobber    keep files whose content differs instead of conflicting
   -q              print only conflicts
   -v              also print entries that already exist
   --howto         print the full guide
@@ -149,15 +150,19 @@ func (c *cli) apply(args []string) error {
 	fs := newFlags()
 	file := fs.String("f", "", "")
 	from := fs.String("from", "", "")
-	var dryRun, force, quiet, verbose bool
+	var dryRun, force, noClobber, quiet, verbose bool
 	fs.BoolVar(&dryRun, "n", false, "")
 	fs.BoolVar(&dryRun, "dry-run", false, "")
 	fs.BoolVar(&force, "force", false, "")
+	fs.BoolVar(&noClobber, "no-clobber", false, "")
 	fs.BoolVar(&quiet, "q", false, "")
 	fs.BoolVar(&verbose, "v", false, "")
 	showHowto := fs.Bool("howto", false, "")
 	if err := parse(fs, args, 1); err != nil {
 		return err
+	}
+	if force && noClobber {
+		return usageError("--force and --no-clobber are mutually exclusive")
 	}
 	if *showHowto {
 		_, err := io.WriteString(c.stdout, howto)
@@ -172,7 +177,7 @@ func (c *cli) apply(args []string) error {
 	if err != nil {
 		return err
 	}
-	p, err := apply.New(target, nodes, apply.Options{Force: force})
+	p, err := apply.New(target, nodes, apply.Options{Force: force, NoClobber: noClobber})
 	if err != nil {
 		return err
 	}
@@ -180,7 +185,7 @@ func (c *cli) apply(args []string) error {
 		switch s.Action {
 		case apply.Conflict:
 		case apply.Exists:
-			if !verbose {
+			if !verbose && (quiet || s.Reason == "") {
 				continue
 			}
 		default:
